@@ -26,18 +26,18 @@ Load this skill after `scrapy-schema-infer` has run and one or more `zyte-probe-
 ### 2. Derive names
 
 From the `url`:
-- Extract the domain (e.g. `www.scan.co.uk` → `scan.co.uk`)
+- Extract the domain (e.g. `books.toscrape.com` → `books.toscrape.com`)
 - Strip subdomains (drop anything before the second-to-last dot segment)
 - Strip the TLD (drop the last dot segment)
 - Slugify: lowercase, replace hyphens and dots with underscores, keep only alphanumeric and underscores
 
 Examples:
-- `www.scan.co.uk` → `scan`
+- `books.toscrape.com` → `books_toscrape`
 - `www.books-to-scrape.com` → `books_to_scrape`
 - `news.ycombinator.com` → `ycombinator`
 
 This gives you:
-- **project name** — the slugified result (e.g. `scan`)
+- **project name** — the slugified result (e.g. `books_toscrape`)
 - **spider name** — same as project name
 
 ### 3. Run `scrapy startproject`
@@ -115,9 +115,9 @@ Create `<project_name>/pages/__init__.py`. Leave it empty for now — it will be
 uv run scrapy genspider <spider_name> <domain>
 ```
 
-Where `<domain>` is the full registered domain from the URL (e.g. `scan.co.uk`), not the slugified name.
+Where `<domain>` is the full registered domain from the URL (e.g. `books.toscrape.com`), not the slugified name.
 
-**Spider name collision:** Scrapy does not allow a spider with the same name as the project. If `<spider_name>` equals `<project_name>`, append `_spider` to the spider name (e.g. project `scan` → spider `scan_spider`).
+**Spider name collision:** Scrapy does not allow a spider with the same name as the project. If `<spider_name>` equals `<project_name>`, append `_spider` to the spider name (e.g. project `books_toscrape` → spider `books_toscrape_spider`).
 
 This creates `<project_name>/spiders/<spider_name>.py` using the default basic template.
 

@@ -1,6 +1,6 @@
 ---
 name: scrapy-builder
-description: Build a complete Scrapy spider from scratch given a navigation URL and a detail URL. Orchestrates scrapy-env-setup through scrapy-spider-update in sequence. Use this as the single entry point when starting a new spider project.
+description: Build a complete Scrapy spider from scratch given a navigation URL and an optional detail URL. Orchestrates scrapy-env-setup through scrapy-spider-update in sequence. Use this as the single entry point when starting a new spider project.
 license: MIT
 compatibility: opencode
 ---
@@ -21,11 +21,9 @@ Load this skill when the user wants to build a new Scrapy spider. Collect a navi
 
 Ask the user for the following if not already provided:
 
-- **URLs** — exactly two URLs from the same domain are required:
-  1. A **navigation/listing URL** (e.g. a category or search results page) — drives the spider's crawl pattern and generates the navigation page object
-  2. A **detail URL** (e.g. a single product page) — generates the detail page object and its CSS selectors
+- **Navigation/listing URL** (required) — e.g. a category or search results page. Drives the spider's crawl pattern and generates the navigation page object.
 
-  Both are mandatory. Without a detail URL there is no detail page object, and the spider's leaf callback will have nothing to inject into and will fail at runtime.
+- **Detail URL** (optional) — e.g. a single product page. If provided, it is passed to `scrapy-zyte-probe` along with the navigation URL so both are probed upfront. If not provided, `scrapy-schema-infer` will discover and probe the detail page automatically from the navigation page's links.
 
 - **Working directory** — where to create the project (default: current directory).
 
@@ -46,7 +44,7 @@ Execute each skill below in order. Load each skill via the `skill` tool, execute
 |---|---|---|
 | 1 | `scrapy-env-setup` | `.venv/` already exists (handled in step 2 above) |
 | 2 | `scrapy-zyte-probe` | `zyte-probe-result-*.json` files already exist in the cwd for all provided URLs |
-| 3 | `scrapy-schema-infer` | All `zyte-probe-result-*.json` files already contain a `page_type` field |
+| 3 | `scrapy-schema-infer` | All `zyte-probe-result-*.json` files already contain a `page_type` field **and** at least two probe result files exist (one for the listing page, one for the detail page) |
 | 4 | `scrapy-project-setup` | A `scrapy.cfg` already exists in the cwd |
 | 5 | `scrapy-page-objects` | All page object files already exist with no `pass` stubs remaining |
 | 6 | `scrapy-selectors` | All `@field` methods in the page object files already have implementations (no `pass` stubs) |
@@ -68,8 +66,8 @@ After all steps have run successfully, report:
 
 ## Rules
 
-- Never ask the user for URLs more than once — collect both in step 1 and carry them forward.
-- Both a navigation URL and a detail URL are required — do not proceed with only one URL.
+- Never ask the user for URLs more than once — collect them in step 1 and carry them forward.
+- The navigation URL is required. The detail URL is optional — if not provided, `scrapy-schema-infer` discovers it automatically.
 - Never skip the verify step within each sub-skill — each skill's own verification must pass before moving on.
 - If any skill fails its verify step, stop and report the error clearly. Do not continue to the next skill.
 - Always use `uv run scrapy` — never bare `scrapy`.

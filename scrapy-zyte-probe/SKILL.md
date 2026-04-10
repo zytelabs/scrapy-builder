@@ -44,9 +44,9 @@ For each URL, derive a short filesystem-safe slug used in all output filenames:
 - If the slug is empty (e.g. the URL is just a domain), use `index`
 
 Examples:
-- `https://www.scan.co.uk/shop/gpu-amd/all` → `shop_gpu_amd_all`
-- `https://www.scan.co.uk/products/some-product` → `products_some_product`
-- `https://www.scan.co.uk/` → `index`
+- `https://books.toscrape.com/catalogue/category/books_1/index.html` → `catalogue_category_books_1_index_html`
+- `https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html` → `catalogue_a_light_in_the_attic_1000_index_html`
+- `https://books.toscrape.com/` → `index`
 
 ### 4. Try `httpResponseBody` for all URLs in one batch
 

@@ -22,12 +22,12 @@ Load this skill after `scrapy-project-setup` has run and one or more `zyte-probe
 - Find all `zyte-probe-result-*.json` files in the cwd.
 - For each file read: `url`, `page_type`, `item_type`.
 - Determine the project name using the same derivation as `scrapy-project-setup`:
-  - Extract the registered domain from any probe URL (e.g. `scan.co.uk`)
-  - Strip the TLD, slugify → project name (e.g. `scan`)
+  - Extract the registered domain from any probe URL (e.g. `books.toscrape.com`)
+  - Strip the TLD, slugify → project name (e.g. `books_toscrape`)
 
 ### 2. Group probe results by domain
 
-- For each probe result, extract the registered domain (e.g. `scan.co.uk`).
+- For each probe result, extract the registered domain (e.g. `books.toscrape.com`).
 - Group all probe results that share the same domain — they go into one file.
 
 ### 3. Derive names
@@ -35,17 +35,17 @@ Load this skill after `scrapy-project-setup` has run and one or more `zyte-probe
 For each domain:
 
 **Domain filename** — replace `.` and `-` with `_`, lowercase:
-- `scan.co.uk` → `scan_co_uk.py`
+- `books.toscrape.com` → `books_toscrape_com.py`
 - `books-to-scrape.com` → `books_to_scrape_com.py`
 
 **Class name prefix** — title-case each segment of the domain, joined:
-- `scan.co.uk` → `ScanCoUk`
-- `books-to-scrape.com` → `BooksToscrape` (hyphens removed, not split)
+- `books.toscrape.com` → `BooksToscrapeCom`
+- `books-to-scrape.com` → `BooksToScrape` (hyphens removed, not split)
 
 **Page object class name** — prefix + page type + `Page`:
-- `page_type: Product` → `ScanCoUkProductPage`
-- `page_type: ProductNavigation` → `ScanCoUkProductNavigationPage`
-- `page_type: Article` → `ScanCoUkArticlePage`
+- `page_type: Product` → `BooksToscrapeComProductPage`
+- `page_type: ProductNavigation` → `BooksToscrapeComProductNavigationPage`
+- `page_type: Article` → `BooksToscrapeComArticlePage`
 
 **Base class** — use the `zyte_common_items` page base class for the item type:
 

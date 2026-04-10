@@ -23,10 +23,10 @@ Load this skill after `scrapy-page-objects` has run and `zyte-probe-sample-*.htm
 - For each file read: `url`, `page_type`, `item_type`, `html_file`.
 - Read the HTML file named in `html_file` for each probe result.
 - Derive the project name and domain using the same slugify logic as `scrapy-project-setup`:
-  - Extract the registered domain from any probe URL (e.g. `www.scan.co.uk` → `scan.co.uk`)
-  - Strip subdomains and TLD → slugify → project name (e.g. `scan`)
+  - Extract the registered domain from any probe URL (e.g. `books.toscrape.com` → `books.toscrape.com`)
+  - Strip subdomains and TLD → slugify → project name (e.g. `books_toscrape`)
 - Identify the page object file: `<project_name>/pages/<domain_underscored>.py`
-  - Domain filename: replace `.` and `-` with `_`, lowercase (e.g. `scan.co.uk` → `scan_co_uk.py`)
+  - Domain filename: replace `.` and `-` with `_`, lowercase (e.g. `books.toscrape.com` → `books_toscrape_com.py`)
 - Read the page object file to get the current list of classes and `@field` methods.
 
 ### 2. For each `@field` method, determine the implementation

@@ -22,9 +22,9 @@ Load this skill after `scrapy-page-objects` has run and a spider file exists at 
 - Find all `zyte-probe-result-*.json` files in the cwd.
 - For each file read: `url`, `page_type`, `item_type`.
 - Derive the project name using the same logic as `scrapy-project-setup`:
-  - Extract the registered domain from any probe URL (e.g. `www.scan.co.uk` → `scan.co.uk`)
-  - Strip subdomains and TLD → slugify → project name (e.g. `scan`)
-- Spider name = project name. If they would collide, append `_spider` (e.g. project `scan` → spider `scan_spider`). Apply the same rule used during `scrapy-project-setup`.
+  - Extract the registered domain from any probe URL (e.g. `books.toscrape.com` → `books.toscrape.com`)
+  - Strip subdomains and TLD → slugify → project name (e.g. `books_toscrape`)
+- Spider name = project name. If they would collide, append `_spider` (e.g. project `books_toscrape` → spider `books_toscrape_spider`). Apply the same rule used during `scrapy-project-setup`.
 
 ### 2. Determine the start URLs
 
@@ -101,11 +101,11 @@ class <PrefixSpider>(scrapy.Spider):
 
 **Filling in the template:**
 
-- `<project_name>` — the slugified project name (e.g. `scan`)
+- `<project_name>` — the slugified project name (e.g. `books_toscrape`)
 - `<ItemClass1>`, `<ItemClass2>` — item classes imported directly from `zyte_common_items` (e.g. `Product`, `ProductNavigation`)
-- `<PrefixSpider>` — title-case of the project name + `Spider` (e.g. `ScanSpider`); never `ScanSpiderSpider`
+- `<PrefixSpider>` — title-case of the project name + `Spider` (e.g. `BooksToscrapeSpider`); never `BooksToscrapeSpiderSpider`
 - `<spider_name>` — the spider name derived in step 1
-- `<domain>` — the registered domain (e.g. `scan.co.uk`)
+- `<domain>` — the registered domain (e.g. `books.toscrape.com`)
 - `urls` list — one string per navigation URL collected in step 2
 - `<NavigationItemClass>` — the navigation item class (e.g. `ProductNavigation`)
 - `<ProductItemClass>` — the detail item class (e.g. `Product`)
