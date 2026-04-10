@@ -26,7 +26,7 @@ Collect all URLs from the user. There may be one or many. If no URLs were provid
 Verify `ZYTE_API_KEY` is set in the environment:
 
 ```
-echo $ZYTE_API_KEY
+test -n "$ZYTE_API_KEY" && echo "ZYTE_API_KEY is set" || echo "ZYTE_API_KEY is not set"
 ```
 
 If it is empty or unset, stop and tell the user:
