@@ -98,6 +98,9 @@ NEWSPIDER_MODULE = "<project_name>.spiders"
 
 ROBOTSTXT_OBEY = False
 
+CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS_PER_DOMAIN = 32
+
 ADDONS = {
     "scrapy_zyte_api.Addon": 500,
 }
@@ -107,6 +110,11 @@ ZYTE_API_KEY = ""  # set via environment variable ZYTE_API_KEY
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 1.0
+AUTOTHROTTLE_MAX_DELAY = 10.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 32.0
 ```
 
 ### 6. Write the spider
@@ -224,7 +232,7 @@ A working Scrapy project in the working directory:
 pyproject.toml                  (pre-existing)
 scrapy.cfg
 <project_name>/
-  settings.py                   ← ADDONS + scrapy-zyte-api configured
+  settings.py                   ← ADDONS + scrapy-zyte-api configured, CONCURRENT_REQUESTS=32, CONCURRENT_REQUESTS_PER_DOMAIN=32, AutoThrottle enabled
   spiders/
     <spider_name>.py            ← async JSON paginating spider
 ```
