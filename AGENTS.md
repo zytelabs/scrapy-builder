@@ -52,11 +52,13 @@ Keep instructions executable and specific. Avoid generic advice.
 
 ## Skills in this project
 
-Use `scrapy-builder` as the single entry point for building a new spider end-to-end. It orchestrates the 7 pipeline skills below in sequence.
+Use `scrapy-builder` as the single entry point for building a new spider end-to-end. It orchestrates the 7 pipeline skills below in sequence, and automatically routes to `scrapy-shopify-spider` when a Shopify site is detected.
 
 | Skill | What it does |
 |---|---|
 | `scrapy-builder` | **Orchestrator** — runs the full pipeline from URLs to working spider in one shot |
+| `scrapy-shopify-spider` | **Shopify shortcut** — builds a JSON API spider for any Shopify store; auto-triggered by `scrapy-builder` when Shopify is detected |
+| `scrapy-zyte-site-audit` | **Standalone diagnostic** — audits a URL for fetch method, platform, anti-bot, JS dependency, and AI extraction viability |
 
 The 7 pipeline skills (run in this order by `scrapy-builder`, or individually if resuming):
 
@@ -101,3 +103,11 @@ The 7 pipeline skills (run in this order by `scrapy-builder`, or individually if
 ### Items
 - Never create custom item subclasses in `items.py` — items are provided directly by the `zyte_common_items` page base classes
 - `zyte_common_items` LSP type annotation errors in the venv are a known upstream issue — safe to ignore
+
+### Shopify JSON API (`scrapy-shopify-spider`)
+- `/products.json` prices are **strings** (`"29.99"`), not numbers — always parse before arithmetic
+- `compare_at_price: "0.00"` means no sale price — treat identically to `null`
+- No currency field in `/products.json` — fetch `/cart.js` if currency is required
+- No image `alt` text in `/products.json` — available only via Admin/Storefront GraphQL API
+- Some Shopify stores disable `/products.json` — check for 404 or login redirect before proceeding
+- Legacy `?page=N` pagination is capped at 1,000 pages (250,000 products); use `page_info` cursor for larger stores

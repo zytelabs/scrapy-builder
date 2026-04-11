@@ -78,10 +78,10 @@ class <PrefixSpider>(scrapy.Spider):
     name = "<spider_name>"
     allowed_domains = ["<domain>"]
 
+    # one entry per navigation probe URL
     urls: list[str] = [
         "<navigation_url_1>",
         "<navigation_url_2>",
-        # one entry per navigation probe URL
     ]
 
     async def start(self):

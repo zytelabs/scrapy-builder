@@ -36,7 +36,22 @@ Inspect the working directory for `.venv/` and `pyproject.toml`.
 - **If `.venv/` already exists** — skip to step 3. The environment is ready.
 - **If `.venv/` is missing** — load and execute the `scrapy-env-setup` skill before continuing.
 
-### 3. Run the pipeline
+### 3. Check for Shopify platform
+
+Before running the standard pipeline, check the working directory for a Shopify signal in any of these locations:
+
+1. A `zyte-audit-report-*.md` file containing the line `**Detected platform:** Shopify`
+2. A `zyte-probe-result-*.json` file containing `"platform": "Shopify"`
+
+If a Shopify signal is found:
+- Extract the store domain from the matching file's `url` field.
+- **Stop the standard pipeline.**
+- Load and execute the `scrapy-shopify-spider` skill instead, passing the store domain.
+- Do not continue to Step 4 below.
+
+If no Shopify signal is found, proceed to Step 4.
+
+### 4. Run the pipeline
 
 Execute each skill below in order. Load each skill via the `skill` tool, execute it fully (including its own verify step), then move to the next. Do not skip a step unless the condition in the "Skip if" column is met.
 
@@ -52,7 +67,9 @@ Execute each skill below in order. Load each skill via the `skill` tool, execute
 
 When loading `scrapy-zyte-probe` in step 2, pass the URLs collected in step 1 — do not ask the user for URLs again.
 
-### 4. Confirm completion
+> **Audit report integration:** If `scrapy-zyte-site-audit` has already been run for any of the URLs, the resulting `zyte-audit-report-*.md` files will be present in the working directory. `scrapy-zyte-probe` automatically detects and consumes these files — extracting the recommended fetch method — instead of making redundant Zyte API calls. No user action is required; this is the integration point between the audit skill and the builder pipeline.
+
+### 5. Confirm completion
 
 After all steps have run successfully, report:
 
@@ -71,7 +88,7 @@ After all steps have run successfully, report:
 - Never skip the verify step within each sub-skill — each skill's own verification must pass before moving on.
 - If any skill fails its verify step, stop and report the error clearly. Do not continue to the next skill.
 - Always use `uv run scrapy` — never bare `scrapy`.
-- The skip conditions in step 3 are resumability guards — they allow re-running `scrapy-builder` in a partially-complete project without redoing finished work.
+- The skip conditions in step 4 are resumability guards — they allow re-running `scrapy-builder` in a partially-complete project without redoing finished work.
 
 ## Output
 

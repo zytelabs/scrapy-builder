@@ -42,6 +42,19 @@ Update the probe JSON to include:
 }
 ```
 
+### 1a. Bot-challenge guard
+
+Before running signal analysis, check the size of the decoded HTML body returned in Step 1.
+
+If the body is **smaller than 5 KB** and the URL hostname does not contain obvious test markers (e.g. `toscrape.com`, `localhost`, `127.0.0.1`):
+
+- Do not attempt to classify the page.
+- Warn the user:
+  > The fetched body for `<url>` is only `<N>` bytes — this is likely a bot-challenge page, CAPTCHA, or redirect rather than real content. Re-probe using `browserHtml` to retrieve the actual page.
+- Stop. Do not proceed to Step 2 for this URL.
+
+If the body is ≥ 5 KB, continue to Step 2.
+
 ### 2. Classify the listing page
 
 Run signal analysis (see below) on the listing page HTML. Write the classification fields (`page_type`, `item_type`, `confidence`, `signals`, `candidate_types`) into `zyte-probe-result-<slug>.json`.
@@ -202,6 +215,8 @@ When confidence is **low**:
 - Pick the type supported by the most and highest-tier signals as the primary result.
 - List all other candidate types in `candidate_types`.
 - Do not stop — always produce an output.
+
+**AI extraction note:** When a `zyte-audit-report-<slug>.md` is present in the working directory for the URL being classified, check its **AI Auto-Extraction Viability** section. Field completeness ≥ 70% means AI auto-extraction is viable as the primary data source; below 70%, custom CSS selectors are preferred. This does not change the `page_type` or `item_type` classification — it is informational context for the downstream spider configuration step.
 
 ### Write classification fields into probe JSON
 

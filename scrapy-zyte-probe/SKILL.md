@@ -34,19 +34,50 @@ If it is empty or unset, stop and tell the user:
 
 Do not proceed.
 
+### 2a. Check for an existing audit report
+
+Before calling the Zyte API, scan the working directory for files matching `zyte-audit-report-*.md`. For each file found, read the first non-empty line after the `# Zyte API Site Audit:` heading to extract the audited URL.
+
+If the audited URL matches a URL to be probed:
+
+1. Read the **Section 1 (Fetch Method Recommendation)** table — look for the row where the `Method` column is `httpResponseBody` or `browserHtml` and `Status` is `200`. Use the method from the recommended fetch row.
+2. Derive the slug for that URL (using the formula in Step 3).
+3. Write `zyte-probe-result-<slug>.json` directly from the audit data:
+
+```json
+{
+  "url": "<the audited url>",
+  "fetch_method": "httpResponseBody",
+  "http_status": 200,
+  "html_file": "zyte-probe-sample-<slug>.html",
+  "source": "audit_report"
+}
+```
+
+4. If `zyte-audit-http-<slug>.json` exists in the working directory, extract the `httpResponseBody` field from it (Base64-decode it) and write the HTML to `zyte-probe-sample-<slug>.html`. Otherwise write an empty `.html` placeholder so downstream skills have a file to read.
+5. Mark that URL as **done** — do not include it in steps 4–5.
+
+If no matching audit report is found for a URL, proceed normally through steps 4–5.
+
 ### 3. Derive a slug for each URL
 
-For each URL, derive a short filesystem-safe slug used in all output filenames:
+For each URL, derive a filesystem-safe slug used in all output filenames:
 
-- Take the URL path, strip leading/trailing slashes
-- Replace `/`, `.`, `-`, `?`, `=`, `&` with `_`
-- Truncate to 60 characters
-- If the slug is empty (e.g. the URL is just a domain), use `index`
+```python
+import re
+from urllib.parse import urlparse
+
+parsed = urlparse(url)
+raw = (parsed.netloc + parsed.path).strip("/")
+slug = re.sub(r"[^a-z0-9]+", "-", raw.lower()).strip("-") or "root"
+```
+
+This format (hostname + path, hyphen-separated) matches the slug produced by `scrapy-zyte-site-audit` and `scrapy-schema-infer`, enabling cross-skill file lookup.
 
 Examples:
-- `https://books.toscrape.com/catalogue/category/books_1/index.html` → `catalogue_category_books_1_index_html`
-- `https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html` → `catalogue_a_light_in_the_attic_1000_index_html`
-- `https://books.toscrape.com/` → `index`
+- `https://books.toscrape.com/catalogue/category/books_1/index.html` → `books-toscrape-com-catalogue-category-books-1-index-html`
+- `https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html` → `books-toscrape-com-catalogue-a-light-in-the-attic-1000-index-html`
+- `https://books.toscrape.com/` → `books-toscrape-com`
 
 ### 4. Try `httpResponseBody` for all URLs in one batch
 
@@ -147,6 +178,8 @@ These should already be deleted in steps 4 and 5, but remove any that still exis
 - Always use `uv run zyte-api`, not `zyte-api` directly.
 - Always delete temp `.jsonl` files after use.
 - Output filenames always include the URL slug — never use bare `zyte-probe-result.json`.
+- If a `zyte-audit-report-*.md` exists in the working directory for a URL, consume it instead of calling the Zyte API — do not make a redundant API call.
+- A ≥50% browser-vs-HTTP body size delta is the threshold at which `browserHtml` is preferred over `httpResponseBody`. The probe skill does not measure this delta itself, but it should reflect the fetch method recommendation from an audit report when one is present.
 
 ## Output
 
