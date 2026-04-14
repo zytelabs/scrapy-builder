@@ -31,6 +31,10 @@ Load this skill after `scrapy-page-objects` has run and `zyte-probe-sample-*.htm
 
 ### 2. For each `@field` method, determine the implementation
 
+Collect the full list of `@field` methods to implement from the page object file.
+
+**Concurrent field analysis:** Issue all field implementations as concurrent tool calls — one per `@field` method (or per class if there are multiple classes in the file). Each tool call reads the probe HTML, applies the decision tree below, and returns the implementation string for that field. Do not wait for one field to complete before starting the next — launch all field analyses in a single parallel batch. Collect all results before proceeding to Step 6.
+
 Work through every `@field` method in the page object file. For each field, apply the decision tree below in order — use the first strategy that succeeds.
 
 #### Strategy 1 — Microdata (`itemprop`)
@@ -235,6 +239,8 @@ After generating all field implementations, scan the generated code for `zyte_co
 Also add `from urllib.parse import urljoin` if any `urljoin(...)` calls were emitted.
 
 ### 7. Rewrite the page object file
+
+**This step is a single atomic write.** All concurrent field analyses from Step 2 must be complete and all implementations collected before this step runs. Do not write the file incrementally or in multiple passes.
 
 Replace each `pass` stub with the generated implementation. Preserve all existing structure:
 - Module-level imports

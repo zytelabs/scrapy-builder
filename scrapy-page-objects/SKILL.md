@@ -30,6 +30,8 @@ Load this skill after `scrapy-project-setup` has run and one or more `zyte-probe
 - For each probe result, extract the registered domain (e.g. `books.toscrape.com`).
 - Group all probe results that share the same domain — they go into one file.
 
+**Multi-domain fan-out:** If probe results span more than one registered domain, launch one subagent per domain using the Task tool — each subagent runs Steps 3 through 6 and Step 8 independently for its assigned domain. Launch all domain subagents in parallel in a single message. Each subagent writes to its own domain file (`pages/<domain_underscored>.py`), so there are no write conflicts between subagents. Wait for all subagents to complete before running Step 7. The `pages/__init__.py` update (Step 7) must be run once, after all domain subagents finish, as a single sequential write that imports every domain module — never written concurrently.
+
 ### 3. Derive names
 
 For each domain:
@@ -221,7 +223,9 @@ class <Prefix><PageType>Page(<PageBaseClass>):
 
 ### 7. Update `<project_name>/pages/__init__.py`
 
-After writing the domain file, add an import of the new module to `pages/__init__.py` so that `handle_urls` rules register automatically when the package is imported:
+**This step runs once, after all domain files have been written** (including after all domain subagents complete in the multi-domain case). Write a single import for every domain module in one atomic pass — do not append imports individually per subagent.
+
+Add an import of each domain module to `pages/__init__.py` so that `handle_urls` rules register automatically when the package is imported:
 
 ```python
 from <project_name>.pages import <domain_module>  # noqa: F401 — registers handle_urls rules with scrapy-poet

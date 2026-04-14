@@ -29,47 +29,63 @@ Ask the user for the following if not already provided:
 
 Do not ask for anything else. All other decisions (project name, spider name, page types, selectors) are derived automatically by the downstream skills.
 
-### 2. Check the environment
+### 2. Check the environment and platform signal
 
-Inspect the working directory for `.venv/` and `pyproject.toml`.
+Run these two checks as **concurrent tool calls** — issue both in a single parallel batch, then use the results to decide the next step.
 
-- **If `.venv/` already exists** — skip to step 3. The environment is ready.
-- **If `.venv/` is missing** — load and execute the `scrapy-env-setup` skill before continuing.
+**Environment check:** Inspect the working directory for `.venv/` and `pyproject.toml`.
 
-### 3. Check for Shopify platform
-
-Before running the standard pipeline, check the working directory for a Shopify signal in any of these locations:
-
+**Shopify signal check:** Check the working directory for a Shopify signal in any of these locations:
 1. A `zyte-audit-report-*.md` file containing the line `**Detected platform:** Shopify`
 2. A `zyte-probe-result-*.json` file containing `"platform": "Shopify"`
 
-If a Shopify signal is found:
-- Extract the store domain from the matching file's `url` field.
-- **Stop the standard pipeline.**
-- Load and execute the `scrapy-shopify-spider` skill instead, passing the store domain.
-- Do not continue to Step 4 below.
+Once both checks complete:
 
-If no Shopify signal is found, proceed to Step 4.
+- **If `.venv/` is missing** — load and execute the `scrapy-env-setup` skill before continuing.
+- **If a Shopify signal is found** — extract the store domain from the matching file's `url` field, stop the standard pipeline, load and execute the `scrapy-shopify-spider` skill instead, and do not continue to Step 3.
+- **Otherwise** — proceed to Step 3 with the environment confirmed ready.
 
-### 4. Run the pipeline
+### 3. Run the pipeline
 
-Execute each skill below in order. Load each skill via the `skill` tool, execute it fully (including its own verify step), then move to the next. Do not skip a step unless the condition in the "Skip if" column is met.
+The pipeline runs in three phases. Load each skill via the `skill` tool and execute it fully (including its own verify step) before moving on. Do not skip a step unless the "Skip if" condition is met.
+
+#### Phase A — Sequential setup
+
+Run steps 1 and 2 in order. Each must complete before the next starts.
 
 | Step | Skill | Skip if |
 |---|---|---|
 | 1 | `scrapy-env-setup` | `.venv/` already exists (handled in step 2 above) |
 | 2 | `scrapy-zyte-probe` | `zyte-probe-result-*.json` files already exist in the cwd for all provided URLs |
+
+When loading `scrapy-zyte-probe` in step 2, pass the URLs collected in step 1 — do not ask the user for URLs again.
+
+#### Phase B — Concurrent classification and scaffolding
+
+Once `scrapy-zyte-probe` completes (or is skipped), launch steps 3 and 4 as **concurrent Task tool calls** — issue both in a single parallel batch and wait for both to finish before continuing.
+
+| Step | Skill | Skip if |
+|---|---|---|
 | 3 | `scrapy-schema-infer` | All `zyte-probe-result-*.json` files already contain a `page_type` field **and** at least two probe result files exist (one for the listing page, one for the detail page) |
 | 4 | `scrapy-project-setup` | A `scrapy.cfg` already exists in the cwd |
+
+These two skills are independent: `scrapy-schema-infer` reads probe HTML to classify pages, while `scrapy-project-setup` reads probe JSON only for the domain name to scaffold the project. Neither depends on the other's output. Both must complete before Phase C begins because `scrapy-page-objects` requires both the `page_type` fields (from schema-infer) and the `pages/` package skeleton (from project-setup).
+
+If only one of the two needs to run (the other meets its skip condition), run that single skill normally — no concurrency needed.
+
+#### Phase C — Sequential finalisation
+
+Run steps 5, 6, and 7 in order. Each must complete before the next starts.
+
+| Step | Skill | Skip if |
+|---|---|---|
 | 5 | `scrapy-page-objects` | All page object files already exist with no `pass` stubs remaining |
 | 6 | `scrapy-selectors` | All `@field` methods in the page object files already have implementations (no `pass` stubs) |
 | 7 | `scrapy-spider-update` | The spider file already contains `async def start(` |
 
-When loading `scrapy-zyte-probe` in step 2, pass the URLs collected in step 1 — do not ask the user for URLs again.
-
 > **Audit report integration:** If `scrapy-zyte-site-audit` has already been run for any of the URLs, the resulting `zyte-audit-report-*.md` files will be present in the working directory. `scrapy-zyte-probe` automatically detects and consumes these files — extracting the recommended fetch method — instead of making redundant Zyte API calls. No user action is required; this is the integration point between the audit skill and the builder pipeline.
 
-### 5. Confirm completion
+### 4. Confirm completion
 
 After all steps have run successfully, report:
 
@@ -88,7 +104,7 @@ After all steps have run successfully, report:
 - Never skip the verify step within each sub-skill — each skill's own verification must pass before moving on.
 - If any skill fails its verify step, stop and report the error clearly. Do not continue to the next skill.
 - Always use `uv run scrapy` — never bare `scrapy`.
-- The skip conditions in step 4 are resumability guards — they allow re-running `scrapy-builder` in a partially-complete project without redoing finished work.
+- The skip conditions in step 3 are resumability guards — they allow re-running `scrapy-builder` in a partially-complete project without redoing finished work.
 
 ## Output
 

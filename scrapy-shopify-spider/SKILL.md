@@ -43,14 +43,15 @@ If `ZYTE_API_KEY` is unset, stop and tell the user to export it before proceedin
 
 If `.venv/` is missing, stop and tell the user to run the `scrapy-env-setup` skill first.
 
-### 2a. Verify the /products.json endpoint is accessible
+### 2a. Verify the /products.json endpoint is accessible and derive names
 
-Before scaffolding, confirm the store exposes the endpoint:
+Run these two operations as **concurrent tool calls** — they are independent and can be issued in a single parallel batch.
+
+**Endpoint check:**
 
 ```
-uv run zyte-api - -o /dev/stdout <<'EOF'
-{"url": "<store_url>/products.json?limit=1&page=1", "httpResponseBody": true}
-EOF
+echo '{"url": "<store_url>/products.json?limit=1&page=1", "httpResponseBody": true}' \
+    | uv run zyte-api - -o /dev/stdout
 ```
 
 Base64-decode `httpResponseBody` from the result. Check that:
@@ -60,7 +61,7 @@ Base64-decode `httpResponseBody` from the result. Check that:
 If the endpoint returns a 404, redirects to a login page, or the body does not contain `"products":`, stop and tell the user:
 > This Shopify store has disabled the `/products.json` endpoint. Use the standard `scrapy-builder` pipeline with HTML scraping instead.
 
-### 3. Derive names
+**Name derivation** (run concurrently with the endpoint check):
 
 ```python
 import re
@@ -75,6 +76,8 @@ spider_name = domain_slug + "_spider"  # avoids name == project collision
 spider_class = "".join(w.capitalize() for w in domain_slug.split("_")) + "Spider"
 # e.g. "Direct4x4CoUkSpider"
 ```
+
+Wait for both to complete. If the endpoint check fails, stop (name derivation result is discarded). Otherwise proceed to Step 4 using the derived names.
 
 ### 4. Scaffold the project
 

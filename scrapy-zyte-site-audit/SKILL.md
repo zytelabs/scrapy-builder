@@ -134,6 +134,8 @@ the report.
 
 ### 6. Analyse results
 
+Issue all analysis sub-sections as concurrent tool calls — each sub-section reads its own independent JSON file(s). Launch all of the following analyses in a single parallel batch, then collect all results before writing the report in Step 7.
+
 Read each saved JSON file and extract the following signals:
 
 #### HTTP check (`zyte-audit-http-<slug>.json`)
@@ -225,8 +227,7 @@ For each of the 8 extraction result files, parse the relevant top-level key (`pr
 
 ### 7. Produce the report
 
-Write `zyte-audit-report-<slug>.md` with the following structure. Fill every section with
-concrete findings from the analysis; never leave a section as "N/A" without explanation.
+**Wait for all concurrent analyses from Step 6 to complete before writing.** Then write `zyte-audit-report-<slug>.md` with the following structure.
 
 ---
 

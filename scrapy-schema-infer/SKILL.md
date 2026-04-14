@@ -17,9 +17,11 @@ Load this skill when the user provides a listing page URL and wants to classify 
 
 ## Instructions
 
-### 0. Accept input URL
+### 0. Accept input URLs
 
-Ask the user for the listing page URL if not already provided. Validate that it is non-empty and is a well-formed HTTP or HTTPS URL. Stop and prompt the user if it is missing or malformed.
+Ask the user for one or more listing page URLs if not already provided. Validate that each is non-empty and a well-formed HTTP or HTTPS URL. Stop and prompt the user if any are missing or malformed.
+
+**Multi-URL fan-out:** If more than one listing URL is provided, launch one subagent per URL using the Task tool — each subagent runs Steps 1 through 5 independently for its assigned URL. Launch all subagents in parallel in a single message. Each subagent writes to slug-namespaced files, so there are no write conflicts. Wait for all subagents to complete before reporting results. The remainder of these instructions apply to a single URL (within each subagent or for the single-URL case).
 
 ### 1. Fetch the listing page
 
@@ -90,7 +92,7 @@ Parse the listing page HTML. Walk every `<a href="...">` element in document ord
 5. Continue scanning remaining links in parallel with the probe running.
 6. As soon as the probe result is available, run signal analysis on the returned HTML.
    - If the page classifies as a detail type (`Product`, `Article`, `JobPosting`, etc.) → stop scanning, use this page as the confirmed detail page.
-   - If the page classifies as a navigation/listing type → discard this result, continue scanning for the next candidate.
+   - If the page classifies as a navigation/listing type → discard this result. **Do not wait before probing the next candidates.** Immediately fire probes for the next 2 highest-scoring unvisited candidates as concurrent tool calls. Evaluate whichever result arrives first — use the first that classifies as a detail type. If neither classifies as a detail type, repeat: fire the next 2 candidates in parallel.
 7. If no link scores above the threshold after scanning all links, fall back to the **pattern-frequency fallback** (Step 3a below).
 
 #### Detail page heuristic — fire probe immediately if ALL of these are true:
